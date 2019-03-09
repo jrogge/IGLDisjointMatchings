@@ -188,6 +188,6 @@ canvas.bind("<Button-1>", click)
 canvas.bind("<Motion>", motion)
 canvas.bind("<Key>", key)
 ######## load graph manually ########
-graph = gutils.load_graph("counter.txt")
-setup_graph()
+#graph = gutils.load_graph("counter.txt")
+#setup_graph()
 root.mainloop()
