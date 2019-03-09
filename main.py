@@ -45,11 +45,11 @@ def add_node(x, y):
 def remove_node(x, y):
     node = get_nearest_node(x,y)
     # delete adjacent edges
-    adj_list = graph[node]
+    adj_list = graph[node].copy()
     for adj_node in adj_list:
         remove_edge(node, adj_node)
-    graph.remove_node(node)
     canvas.delete(graph.nodes[node]['obj'])
+    graph.remove_node(node)
 
 def get_nearest_node(x, y):
     dist = -1
@@ -108,6 +108,7 @@ def key(event):
     elif char == 'r':
         mode = REMOVE_NODE
         new_edge_first = -1
+        print("remove node mode")
 
 def remove_edge(u, v):
     old_obj = graph[u][v]['obj']
@@ -189,8 +190,4 @@ canvas.bind("<Key>", key)
 ######## load graph manually ########
 graph = gutils.load_graph("counter.txt")
 setup_graph()
-#load()
-#canvas.bind("<Key>", redrawDirectionMarker)
-#canvas.bind("<B1-Motion>", drag)
-#root.call('wm', 'attributes', '.', '-topmost', True)
 root.mainloop()
