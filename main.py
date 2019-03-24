@@ -1,6 +1,7 @@
 import networkx as nx
 from tkinter import *
 import gutils
+import states as st
 
 radius = 3
 indicator = -1
@@ -14,31 +15,21 @@ REMOVE_NODE = 3
 REMOVE_EDGE = 4
 mode = ADD_NODE
 graph = nx.Graph()
-node_list = []
 new_edge_first = -1
 filename = ""
+#state = 0 # becomes state object
 
-def setup_graph():
-    for node in graph.nodes(data=True):
-        coords = node[-1]['coord']
-        add_node(coords[0], coords[1])
-    for edge in graph.edges():
-        x0 = graph.nodes[edge[0]]['coord'][0]
-        y0 = graph.nodes[edge[0]]['coord'][1]
-        x1 = graph.nodes[edge[1]]['coord'][0]
-        y1 = graph.nodes[edge[1]]['coord'][1]
-        new_edge_obj = canvas.create_line(x0,y0,x1,y1)
-        graph[edge[0]][edge[1]]['obj'] = new_edge_obj
-        graph.add_edge(edge[0], edge[1], obj = new_edge_obj)
-
-def add_node(x, y):
-    node_list.append((x, y))
+def draw_node(x,y):
     x0 = x - radius
     y0 = y - radius
     x1 = x + radius
     y1 = y + radius
-    new_obj = canvas.create_oval(x0,y0,x1,y1)
+    return canvas.create_oval(x0,y0,x1,y1)
+
+def add_node(x, y):
+    new_obj = draw_node(x,y)
     global indx
+    print("adding node:", indx)
     graph.add_node(indx, coord=[x,y], obj=new_obj)
     indx += 1
 
@@ -82,22 +73,33 @@ def key(event):
     char = event.char
     global mode
     global new_edge_first
+    global state
+    global graph
     if char == 'e':
         mode = ADD_EDGE
+        state = st.AddEdge(graph, canvas, radius)
         # clear any edge clicking
         new_edge_first = -1
         print("edge mode")
+    elif char == 'l':
+        graph = nx.Graph()
+        print("graph currently has:", graph.number_of_nodes(), "nodes")
+        graph = gutils.load_graph("counter.txt")
+        print("and now:", graph.number_of_nodes(), "nodes")
+        setup_graph()
     elif char == 'n':
-        print("node mode")
         mode = ADD_NODE
+        state = st.AddNode(graph, canvas, radius)
         # clear any edge clicking
         new_edge_first = -1
+        print("node mode")
     elif char == 'm':
         maximum_matching()
     elif char == 'b':
         clear_edges()
     elif char == 'p':
         mode = ADD_PATH
+        state = st.AddPath(graph, canvas, radius)
         print("path mode")
     elif char == 's':
         gutils.save_graph(graph, filename)
@@ -148,11 +150,13 @@ def add_edge_click(x,y):
 
 def click(event):
     if mode == ADD_NODE:
-        add_node(event.x, event.y)
+        #add_node(event.x, event.y)
+        state.on_click(event)
     elif mode == REMOVE_NODE:
         remove_node(event.x, event.y)
     elif (mode == ADD_EDGE) or (mode == ADD_PATH):
-        add_edge_click(event.x, event.y)
+        #add_edge_click(event.x, event.y)
+        state.on_click(event)
     elif (mode == REMOVE_EDGE):
         remove_edge_click(event.x, event.y)
 
@@ -168,6 +172,25 @@ def motion(event):
     coords = graph.nodes[index]['coord']
     indicator = canvas.create_line(event.x, event.y, coords[0], coords[1],
             fill='green')
+
+def setup_graph():
+    print("drawing graph with", graph.number_of_nodes(), "nodes")
+    for node in graph.nodes(data=True):
+        coords = node[-1]['coord']
+        draw_node(coords[0], coords[1])
+    print("drawing graph with", graph.number_of_nodes(), "nodes")
+    for edge in graph.edges():
+        x0 = graph.nodes[edge[0]]['coord'][0]
+        y0 = graph.nodes[edge[0]]['coord'][1]
+        x1 = graph.nodes[edge[1]]['coord'][0]
+        y1 = graph.nodes[edge[1]]['coord'][1]
+        new_edge_obj = canvas.create_line(x0,y0,x1,y1)
+        graph[edge[0]][edge[1]]['obj'] = new_edge_obj
+        graph.add_edge(edge[0], edge[1], obj = new_edge_obj)
+    print("drawing graph with", graph.number_of_nodes(), "nodes")
+    global indx
+    print("indx =", indx)
+    indx = graph.number_of_nodes()
 
 
 # Tkinter boilerplate
@@ -188,6 +211,8 @@ canvas.bind("<Button-1>", click)
 canvas.bind("<Motion>", motion)
 canvas.bind("<Key>", key)
 ######## load graph manually ########
-#graph = gutils.load_graph("counter.txt")
-#setup_graph()
+graph = gutils.load_graph("counter.txt")
+setup_graph()
+
+state = st.AddNode(graph, canvas, radius)
 root.mainloop()
