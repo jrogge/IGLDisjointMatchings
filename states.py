@@ -9,6 +9,17 @@ class State(object):
         self.canvas = canvas
         self.radius = radius
 
+    def get_least_available_index(self):
+        expected_val = 0
+        for node in self.graph.nodes(data=True):
+            # networkx iterates over nodes in increasing order
+            if (node[0] == expected_val):
+                expected_val += 1
+            else:
+                return expected_val
+        return expected_val
+                
+
     def get_nearest_node(self, x, y):
         dist = -1
         index = -1
@@ -25,19 +36,34 @@ class State(object):
         pass
 
 class AddNode(State):
-    '''Clicking adds a node to graph'''
+    '''Clicking adds a node to the graph'''
 
     def on_click(self, event):
         x0 = event.x - self.radius
         y0 = event.y - self.radius
         x1 = event.x + self.radius
         y1 = event.y + self.radius
-        self.canvas.create_oval(x0,y0,x1,y1)
-        next_index = self.graph.number_of_nodes()
-        self.graph.add_node(next_index, coord=[event.x,event.y])
+        new_obj = self.canvas.create_oval(x0,y0,x1,y1)
+        next_index = self.get_least_available_index()
+        self.graph.add_node(next_index, coord=[event.x,event.y], obj=new_obj)
+
+class RemoveNode(State):
+    '''Clicking removes a node from the graph'''
+
+    def on_click(self, event):
+        node_index = self.get_nearest_node(event.x, event.y)
+        # delete adjacent edges
+        adj_list = self.graph[node_index].copy()
+        for adj_index in adj_list:
+            # remove edge from graph and delete canvas object
+            old_obj = self.graph[node_index][adj_index]['obj']
+            self.canvas.delete(old_obj)
+            self.graph.remove_edge(node_index, adj_index)
+        self.canvas.delete(self.graph.nodes[node_index]['obj'])
+        self.graph.remove_node(node_index)
 
 class AddEdge(State):
-    '''Clicking adds an edge to graph'''
+    '''Clicking adds an edge to the graph'''
 
     def __init__(self, graph, canvas, radius):
         # call State constructor
@@ -56,6 +82,27 @@ class AddEdge(State):
                     obj = new_edge_obj)
             # reset first node
             self.first_node = -1
+
+class RemoveEdge(State):
+    '''Clicking removes an edge from the graph'''
+
+    def __init__(self, graph, canvas, radius):
+        # call State constructor
+        super(RemoveEdge, self).__init__(graph, canvas, radius)
+        self.prev_node = -1
+
+    def on_click(self, event):
+        nearest_index = self.get_nearest_node(event.x, event.y)
+        if self.prev_node == -1:
+            self.prev_node = nearest_index
+        else:
+            # remove edge from graph and delete canvas object
+            old_obj = self.graph[self.prev_node][nearest_index]['obj']
+            self.canvas.delete(old_obj)
+            self.graph.remove_edge(self.prev_node, nearest_index)
+
+            # reset prev node so we can select a new edge
+            self.prev_node = -1
 
 class AddPath(State):
     '''Select initial node then create a path stemming from that node'''
