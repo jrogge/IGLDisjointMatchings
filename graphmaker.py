@@ -51,48 +51,37 @@ class GraphMaker(object):
         self.root.mainloop()
 
     def draw_graph(self):
-        '''draw the whole graph from scratch'''
-
+        '''Draw the whole graph from scratch. Used when loading a graph'''
         for node in self.graph.nodes(data=True):
             coords = node[-1]['coord']
             nodes[-1]['obj'] = self.draw_node(coords[0], coords[1])
         for edge in self.graph.edges():
-            x0 = self.graph.nodes[edge[0]]['coord'][0]
-            y0 = self.graph.nodes[edge[0]]['coord'][1]
-            x1 = self.graph.nodes[edge[1]]['coord'][0]
-            y1 = self.graph.nodes[edge[1]]['coord'][1]
-            new_edge_obj = canvas.create_line(x0,y0,x1,y1)
+            new_edge_obj = self.draw_edge(edge)
             self.graph[edge[0]][edge[1]]['obj'] = new_edge_obj
 
         # not be safe if nodes have been deleted
         # self.indx = self.graph.number_of_nodes()
 
+    def draw_edge(self, edge):
+        p0 = self.graph.nodes[edge[0]]['coord']
+        x0 = p0[0]
+        y0 = p0[1]
+
+        p1 = self.graph.nodes[edge[1]]['coord']
+        x1 = p1[0]
+        y1 = p1[1]
+        return canvas.create_line(x0,y0,x1,y1)
+
     def draw_node(self, x, y):
         x0 = x - radius
         y0 = y - radius
+
         x1 = x + radius
         y1 = y + radius
 
         return canvas.create_oval(x0,y0,x1,y1)
 
-    # ================================ 
-    # Node functions
-    # ================================ 
-
-    def add_node(self, x, y):
-        new_obj = self.draw_node(x,y)
-        graph.add_node(self.indx, coord=[x,y], obj=new_obj)
-        self.indx += 1
-
-    def remove_node(self, x, y):
-        node = self.get_nearest_node(x,y)
-        # delete adjacent edges
-        adj_list = self.graph[node].copy()
-        for adj_node in adj_list:
-            self.remove_edge(node, adj_node)
-        self.canvas.delete(self.graph.nodes[node]['obj'])
-        self.graph.remove_node(node)
-
+    # is duplicated in State, should just be in one place?
     def get_nearest_node(self, x, y):
         dist = -1
         index = -1
@@ -104,10 +93,6 @@ class GraphMaker(object):
                 index = node[0]
 
         return index
-
-    # ================================ 
-    # General functions
-    # ================================ 
 
     # maybe belongs in State?
     def clear_edges(self):
@@ -179,16 +164,6 @@ class GraphMaker(object):
 
     def click(self, event):
         self.state.on_click(event)
-        #if mode == ADD_NODE:
-        #    #add_node(event.x, event.y)
-        #    state.on_click(event)
-        #elif mode == REMOVE_NODE:
-        #    remove_node(event.x, event.y)
-        #elif (mode == ADD_EDGE) or (mode == ADD_PATH):
-        #    #add_edge_click(event.x, event.y)
-        #    state.on_click(event)
-        #elif (mode == REMOVE_EDGE):
-        #    remove_edge_click(event.x, event.y)
 
     def motion(self, event):
         if self.graph.number_of_nodes() < 1:
