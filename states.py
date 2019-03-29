@@ -11,11 +11,13 @@ class State(object):
 
     def get_least_available_index(self):
         expected_val = 0
-        for node in self.graph.nodes(data=True):
-            # networkx iterates over nodes in increasing order
-            if (node[0] == expected_val):
+        sorted_node_ids = list(self.graph.nodes())
+        sorted_node_ids.sort()
+        for node in sorted_node_ids:
+            if (node == expected_val):
                 expected_val += 1
             else:
+                # if we find a gap in the sorted list, take it
                 return expected_val
         return expected_val
                 

@@ -18,6 +18,8 @@ class GraphMaker(object):
     '''Interactive Tkinter window for creating a graph'''
 
     def __init__(self, mode=ADD_NODE):
+        self.filename = ""
+
         self.graph = nx.Graph() # TODO: add functionality for loading a graph
         self.mode = mode
 
@@ -50,11 +52,24 @@ class GraphMaker(object):
     def begin(self):
         self.root.mainloop()
 
+    def load_graph(self, filename):
+        graph = gutils.load_graph(filename)
+        self.graph = graph
+        
+        self.state = st.AddNode(self.graph, self.canvas, radius)
+        print("self is state?", self.graph is self.state.graph)
+
+        # clear any edge clicking
+        self.last_node = -1
+        print("node mode")
+
+        self.draw_graph()
+
     def draw_graph(self):
         '''Draw the whole graph from scratch. Used when loading a graph'''
         for node in self.graph.nodes(data=True):
             coords = node[-1]['coord']
-            nodes[-1]['obj'] = self.draw_node(coords[0], coords[1])
+            self.graph.nodes[node[0]]['obj'] = self.draw_node(coords[0], coords[1])
         for edge in self.graph.edges():
             new_edge_obj = self.draw_edge(edge)
             self.graph[edge[0]][edge[1]]['obj'] = new_edge_obj
@@ -70,7 +85,7 @@ class GraphMaker(object):
         p1 = self.graph.nodes[edge[1]]['coord']
         x1 = p1[0]
         y1 = p1[1]
-        return canvas.create_line(x0,y0,x1,y1)
+        return self.canvas.create_line(x0,y0,x1,y1)
 
     def draw_node(self, x, y):
         x0 = x - radius
@@ -79,7 +94,7 @@ class GraphMaker(object):
         x1 = x + radius
         y1 = y + radius
 
-        return canvas.create_oval(x0,y0,x1,y1)
+        return self.canvas.create_oval(x0,y0,x1,y1)
 
     # is duplicated in State, should just be in one place?
     def get_nearest_node(self, x, y):
@@ -146,9 +161,9 @@ class GraphMaker(object):
             self.state = st.AddPath(self.graph, self.canvas, radius)
             print("path mode")
 
-        # TODO: implment saving a graph and writing a filename
-        #elif char == 's':
-        #    gutils.save_graph(self.graph, filename)
+        elif char == 's':
+            gutils.save_graph(self.graph, self.filename)
+            print("file saved as", self.filename)
 
         elif char == 'g':
             self.mode = REMOVE_EDGE
