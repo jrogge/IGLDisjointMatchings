@@ -57,11 +57,10 @@ class GraphMaker(object):
         self.graph = graph
         
         self.state = st.AddNode(self.graph, self.canvas, radius)
-        print("self is state?", self.graph is self.state.graph)
+        print("node mode")
 
         # clear any edge clicking
         self.last_node = -1
-        print("node mode")
 
         self.draw_graph()
 
@@ -134,6 +133,12 @@ class GraphMaker(object):
             # clear any edge clicking
             self.last_node = -1
             print("edge mode")
+
+        if char == 'x':
+            self.state = st.ColorEdge(self.graph, self.canvas, radius, "red")
+
+        if char == 'u':
+            self.state = st.ColorEdge(self.graph, self.canvas, radius, "blue")
 
         # TODO: implement loading a graph
         #elif char == 'l':

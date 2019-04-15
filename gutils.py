@@ -7,7 +7,6 @@ def save_graph(G, filename):
     nodes = G.nodes(data=True)
     # write vertices coordinates
     for node in nodes:
-        print("writing node:", node)
         coords = node[-1]['coord']
         c_str = ''
         for c in coords[:-1]:
@@ -38,7 +37,7 @@ def load_graph(filename):
         vals = [float(coord) for coord in node.split(' ')]
         new_graph.add_node(ind, coord=vals)
 
-    for ind, edge in enumerate(edges.split('\n')):
+    for edge in edges.split('\n'):
         if (edge == ''):
             continue
         data = edge.split(' ')

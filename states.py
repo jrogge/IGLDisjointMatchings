@@ -91,20 +91,20 @@ class RemoveEdge(State):
     def __init__(self, graph, canvas, radius):
         # call State constructor
         super(RemoveEdge, self).__init__(graph, canvas, radius)
-        self.prev_node = -1
+        self.first_node = -1
 
     def on_click(self, event):
         nearest_index = self.get_nearest_node(event.x, event.y)
-        if self.prev_node == -1:
-            self.prev_node = nearest_index
+        if self.first_node == -1:
+            self.first_node = nearest_index
         else:
             # remove edge from graph and delete canvas object
-            old_obj = self.graph[self.prev_node][nearest_index]['obj']
+            old_obj = self.graph[self.first_node][nearest_index]['obj']
             self.canvas.delete(old_obj)
-            self.graph.remove_edge(self.prev_node, nearest_index)
+            self.graph.remove_edge(self.first_node, nearest_index)
 
-            # reset prev node so we can select a new edge
-            self.prev_node = -1
+            # reset first node so we can select a new edge
+            self.first_node = -1
 
 class AddPath(State):
     '''Select initial node then create a path stemming from that node'''
@@ -126,3 +126,24 @@ class AddPath(State):
                     obj = new_edge_obj)
             # reset first node
             self.first_node = nearest_index
+
+class ColorEdge(State):
+    '''Clicking colors an edge'''
+
+    def __init__(self, graph, canvas, radius, color):
+        super(ColorEdge, self).__init__(graph, canvas, radius)
+        self.first_node = -1
+        self.color = color
+
+    def on_click(self, event):
+        nearest_index = self.get_nearest_node(event.x, event.y)
+        if self.first_node == -1:
+            self.first_node = nearest_index
+        else:
+            # remove edge from graph and delete canvas object
+            old_obj = self.graph[self.first_node][nearest_index]['obj']
+            self.canvas.itemconfig(old_obj, fill=self.color, width=3)
+
+            # reset first node
+            self.first_node = -1
+
