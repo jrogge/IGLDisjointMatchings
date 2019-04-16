@@ -3,37 +3,30 @@ import numpy as np
 from tkinter import *
 import gutils
 import matching.states as mst
-import matching
+import matching as consts
 
 MID_LINE = 0
 BIGGER = 1
 IND_MODE = BIGGER
-
-radius = 3
-
-primary = 'red'
-light_primary = "#ffbebe"
-secondary = 'blue'
-light_secondary = "#bedbff"
+#TODO: make it easier to restart, currently juggling definitions in a lot of
+#places
 
 class MatchingDevice(object):
     '''Interactive Tkinter window for creating a graph'''
 
-    def __init__(self, filepath="../graphs/counter.txt", max_edges=27):
+    def __init__(self, filepaths=["../graphs/spanner.txt"]):
         '''
-        filepath: the name of a file to load
+        filepaths: a list containing the paths to files to load
         indicator: tkinter canvas object corresponding to current nearest edge
         total_edges: the number of edges that the user has added to their
             pair of dijoint matchings
-        max_edges: the max possible number of edges for the currently loaded
-            graph
         state: the device state, manages clicks and the matchings
         root, canvas: tkinter objects
         '''
-        
-        self.filepath = filepath
-        self.max_edges = max_edges
+        self.filepaths = filepaths
+        self.curr_file = filepaths[0]
         self.total_edges = 0
+        self.on_second_matching = False
 
         # keeps track of the line indicating the nearest edge
         # stores canvas object
@@ -57,20 +50,55 @@ class MatchingDevice(object):
         self.canvas.bind("<Motion>", self.motion)
         self.canvas.bind("<Key>", self.key)
 
+        # set up the graph and screen
         self.load_graph()
-        edge_list = list(self.graph.edges(data=False))
-        self.state = mst.ColorEdge(self.graph, self.canvas, edge_list, primary,
-                light_primary)
 
     def begin(self):
         self.root.mainloop()
 
+    def center(self):
+        ''' Center a graph on the screen changing coordinate data.'''
+        #TODO: this centers along the larger axis but not the smaller, make it
+        # fully center
+        bbx = gutils.get_bounding_box(self.graph)
+        bbx_width = bbx[1][0] - bbx[0][0]
+        bbx_height = bbx[1][1] - bbx[0][1]
+        max_bbx_coord = max(bbx_width, bbx_height)
+
+        # get the largest square that will fit in the screen
+        screenwidth = self.root.winfo_screenwidth()
+        screenheight = self.root.winfo_screenheight()
+        is_wide_screen = screenwidth > screenheight
+        min_screen_dim = 0
+        if is_wide_screen:
+            min_screen_dim = screenheight
+        else:
+            min_screen_dim = screenwidth
+
+        # want to leave a margin on both sides
+        tight_dim = min_screen_dim - (consts.margin * 2)
+        scale_factor = tight_dim / max_bbx_coord
+        gutils.scale_graph(self.graph, scale_factor)
+
+        new_base_x = consts.margin
+        new_base_y = consts.margin
+        if is_wide_screen:
+            new_base_x += (screenwidth - min_screen_dim) / 2
+        else:
+            new_base_y += (screenwidth - min_screen_dim) / 2
+        delta_x = new_base_x - (bbx[0][0] * scale_factor)
+        delta_y = new_base_y - (bbx[0][1] * scale_factor)
+
+        gutils.translate_graph(self.graph, (delta_x, delta_y))
+
     def load_graph(self):
-        self.graph = gutils.load_graph(self.filepath)
+        self.graph = gutils.load_graph(self.curr_file)
+        self.center()
         
         edge_list = list(self.graph.edges(data=False))
-        self.state = mst.ColorEdge(self.graph, self.canvas, edge_list, primary,
-                light_primary)
+        self.state = mst.ColorEdge(self.graph, self.canvas, edge_list,
+                consts.primary_color, consts.light_primary)
+        self.on_second_matching = False
 
         self.draw_graph()
         self.state.color_remaining()
@@ -84,9 +112,6 @@ class MatchingDevice(object):
             coords = node[-1]['coord']
             self.graph.nodes[node[0]]['obj'] = self.draw_node(coords[0], coords[1])
 
-        # not be safe if nodes have been deleted
-        # self.indx = self.graph.number_of_nodes()
-
     def draw_edge(self, edge):
         p0 = self.graph.nodes[edge[0]]['coord']
         x0 = p0[0]
@@ -98,11 +123,11 @@ class MatchingDevice(object):
         return self.canvas.create_line(x0,y0,x1,y1)
 
     def draw_node(self, x, y):
-        x0 = x - radius
-        y0 = y - radius
+        x0 = x - consts.radius
+        y0 = y - consts.radius
 
-        x1 = x + radius
-        y1 = y + radius
+        x1 = x + consts.radius
+        y1 = y + consts.radius
 
         return self.canvas.create_oval(x0,y0,x1,y1)
 
@@ -112,56 +137,43 @@ class MatchingDevice(object):
             obj = curr_edge[-1]['obj']
             self.canvas.itemconfig(obj, fill='black', width=1)
 
-    # maybe belongs in State?
-    def maximum_matching(self):
-        self.clear_edges()
-
-        #indicate the matching
-        max_matching = nx.max_weight_matching(self.graph)
-        for curr_edge in max_matching:
-            extant_edge = self.graph[curr_edge[0]][curr_edge[1]]
-            self.canvas.itemconfig(extant_edge['obj'], fill=MATCHING_COLOR, width=3)
+    def take_second_matching(self):
+        '''Progress on to second matching'''
+        if self.on_second_matching:
+            return
+        remaining_edges = self.state.nonmatching_edges + self.state.remaining_edges
+        self.total_edges += len(self.state.matching_edges)
+        self.state = mst.ColorEdge(self.graph, self.canvas, remaining_edges,
+                consts.secondary_color, consts.light_secondary)
+        self.state.color_remaining()
+        self.on_second_matching = True
 
     def key(self, event):
         char = event.char
 
-        if char == 'l':
-            #self.graph = nx.Graph()
-            #print("self.graph currently has:", self.graph.number_of_nodes(), "nodes")
-            #self.graph = gutils.load_graph("counter.txt")
-            #print("and now:", self.graph.number_of_nodes(), "nodes")
-            #setup_self.graph()
-            print("load mode")
+        # load a different graph
+        if char in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
+            index = int(char) - 1
+            if index < len(self.filepaths):
+                self.canvas.delete('all')
+                self.curr_file = self.filepaths[index]
+                self.load_graph()
+                self.manual_indicator_update()
 
         elif char == 'n':
-            remaining_edges = self.state.nonmatching_edges + self.state.remaining_edges
-            self.total_edges += len(self.state.matching_edges)
-            self.state = mst.ColorEdge(self.graph, self.canvas, remaining_edges,
-                    secondary, light_secondary)
-            self.state.color_remaining()
+            self.take_second_matching()
 
-        elif char == 'd':
-            # NOTE: only press 'd' once
-            self.total_edges += len(self.state.matching_edges)
-            print("      Edges used: %d" % (self.total_edges))
-            print("Maximum possible: %d" % (self.max_edges))
-            if (self.max_edges - self.total_edges >= 2):
-                print("press 'r' to try again or 'l' to try the next graph")
-            elif (self.max_edges - self.total_edges == 1):
-                print("So close! press 'r' to try again")
-            else:
-                print("Well done!")
-
+        # reset the graph. Uncolor all edges, reset state, 
         elif char == 'r':
-            # reset the graph. Uncolor all edges, reset state, 
             self.clear_edges()
             edge_list = list(self.graph.edges(data=False))
-            self.state = mst.ColorEdge(self.graph, self.canvas, edge_list, primary,
-                    light_primary)
+            self.state = mst.ColorEdge(self.graph, self.canvas, edge_list,
+                    consts.primary_color, consts.light_primary)
             self.state.color_remaining()
             self.indicator = -1
             self.total_edges = 0
             self.manual_indicator_update()
+            self.on_second_matching = False
 
         elif char == 'c':
             self.clear_edges()
@@ -169,6 +181,8 @@ class MatchingDevice(object):
     def click(self, event):
         self.state.on_click(event)
         self.manual_indicator_update()
+        if len(self.state.remaining_edges) == 0:
+            self.take_second_matching()
 
     def manual_indicator_update(self):
         '''Show a new indicator. Code taken from

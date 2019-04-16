@@ -1,5 +1,4 @@
 import networkx as nx
-#import matplotlib.pyplot as plt
 
 def save_graph(G, filename):
     '''Writes networkx graph to file using custom format'''
@@ -45,3 +44,39 @@ def load_graph(filename):
 
     f.close()
     return new_graph
+
+def get_bounding_box(graph):
+    ''' Get a bounding box for the coordinates of the graph. Assumes that the
+    node coordinate data is saved as 'coord' in node data'''
+    min_x = -1
+    min_y = -1
+    max_x = -1
+    max_y = -1
+    for node in graph.nodes(data=True):
+        coords = node[-1]['coord']
+        # check x
+        if (coords[0] < min_x or min_x == -1):
+            min_x = coords[0]
+        elif (coords[0] > max_x or max_x == -1):
+            max_x = coords[0]
+
+        # check y
+        if (coords[1] < min_y or min_y == -1):
+            min_y = coords[1]
+        elif (coords[1] > max_y or max_y == -1):
+            max_y = coords[1]
+    return ((min_x, min_y), (max_x, max_y))
+
+def scale_graph(graph, factor):
+    ''' Scale node coordinates by a factor. Python is pass by reference so we
+    do not need to return a modified graph.'''
+    for node in graph.nodes():
+        graph.nodes[node]['coord'][0] *= factor
+        graph.nodes[node]['coord'][1] *= factor
+
+def translate_graph(graph, delta):
+    ''' Translate node coordinates by a vector delta. Python is pass by
+    reference so we do not need to return a modified graph.'''
+    for node in graph.nodes():
+        graph.nodes[node]['coord'][0] += delta[0]
+        graph.nodes[node]['coord'][1] += delta[1]

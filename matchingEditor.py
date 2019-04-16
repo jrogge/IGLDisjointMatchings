@@ -1,9 +1,8 @@
 from matching.matchingdevice import MatchingDevice
 import config
 
-filename = "counter.txt"
-filepath = config.GRAPHS_DIR + filename
-max_edges = 27
+filenames = ["spanner.txt", "counter.txt"]
+filepaths = [config.GRAPHS_DIR + fn for fn in filenames]
 
-mainWin = MatchingDevice(filepath, max_edges)
+mainWin = MatchingDevice(filepaths)
 mainWin.begin()
