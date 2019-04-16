@@ -1,7 +1,8 @@
 import networkx as nx
 from tkinter import *
 import gutils
-import states as st
+import basic.states as st
+import config
 
 # TODO: wrap up into a config file
 radius = 3
@@ -41,7 +42,7 @@ class GraphMaker(object):
 
         # set up canvas
         self.canvas = Canvas(window, height=screenheight, width=screenwidth/2)
-        self.state = st.AddNode(self.graph, self.canvas, radius)
+        self.state = st.AddNode(self.graph, self.canvas, config.RADIUS)
 
         self.canvas.pack()
         self.canvas.focus_set()
@@ -56,7 +57,7 @@ class GraphMaker(object):
         graph = gutils.load_graph(filename)
         self.graph = graph
         
-        self.state = st.AddNode(self.graph, self.canvas, radius)
+        self.state = st.AddNode(self.graph, self.canvas, config.RADIUS)
         print("node mode")
 
         # clear any edge clicking
@@ -87,11 +88,11 @@ class GraphMaker(object):
         return self.canvas.create_line(x0,y0,x1,y1)
 
     def draw_node(self, x, y):
-        x0 = x - radius
-        y0 = y - radius
+        x0 = x - config.RADIUS
+        y0 = y - config.RADIUS
 
-        x1 = x + radius
-        y1 = y + radius
+        x1 = x + config.RADIUS
+        y1 = y + config.RADIUS
 
         return self.canvas.create_oval(x0,y0,x1,y1)
 
@@ -123,22 +124,22 @@ class GraphMaker(object):
         max_matching = nx.max_weight_matching(self.graph)
         for curr_edge in max_matching:
             extant_edge = self.graph[curr_edge[0]][curr_edge[1]]
-            self.canvas.itemconfig(extant_edge['obj'], fill=MATCHING_COLOR, width=3)
+            self.canvas.itemconfig(extant_edge['obj'], fill=config.MATCHING_COLOR, width=3)
 
     def key(self, event):
         char = event.char
         if char == 'e':
             self.mode = ADD_EDGE
-            self.state = st.AddEdge(self.graph, self.canvas, radius)
+            self.state = st.AddEdge(self.graph, self.canvas, config.RADIUS)
             # clear any edge clicking
             self.last_node = -1
             print("edge mode")
 
         if char == 'x':
-            self.state = st.ColorEdge(self.graph, self.canvas, radius, "red")
+            self.state = st.ColorEdge(self.graph, self.canvas, config.RADIUS, "red")
 
         if char == 'u':
-            self.state = st.ColorEdge(self.graph, self.canvas, radius, "blue")
+            self.state = st.ColorEdge(self.graph, self.canvas, config.RADIUS, "blue")
 
         # TODO: implement loading a graph
         #elif char == 'l':
@@ -150,7 +151,7 @@ class GraphMaker(object):
 
         elif char == 'n':
             self.mode = ADD_NODE
-            self.state = st.AddNode(self.graph, self.canvas, radius)
+            self.state = st.AddNode(self.graph, self.canvas, config.RADIUS)
             # clear any edge clicking
             self.last_node = -1
             print("node mode")
@@ -163,7 +164,7 @@ class GraphMaker(object):
 
         elif char == 'p':
             self.mode = ADD_PATH
-            self.state = st.AddPath(self.graph, self.canvas, radius)
+            self.state = st.AddPath(self.graph, self.canvas, config.RADIUS)
             print("path mode")
 
         elif char == 's':
@@ -172,13 +173,13 @@ class GraphMaker(object):
 
         elif char == 'g':
             self.mode = REMOVE_EDGE
-            self.state = st.RemoveEdge(self.graph, self.canvas, radius)
+            self.state = st.RemoveEdge(self.graph, self.canvas, config.RADIUS)
             self.last_node = -1
             print("remove edge mode")
         
         elif char == 'r':
             self.mode = REMOVE_NODE
-            self.state = st.RemoveNode(self.graph, self.canvas, radius)
+            self.state = st.RemoveNode(self.graph, self.canvas, config.RADIUS)
             self.last_node = -1
             print("remove node mode")
 

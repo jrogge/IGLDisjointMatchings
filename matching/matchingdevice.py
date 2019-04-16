@@ -2,26 +2,26 @@ import networkx as nx
 import numpy as np
 from tkinter import *
 import gutils
-import matchingstates as mst
+import matching.states as mst
+import matching
 
 MID_LINE = 0
 BIGGER = 1
 IND_MODE = BIGGER
+
+radius = 3
+
 primary = 'red'
 light_primary = "#ffbebe"
 secondary = 'blue'
 light_secondary = "#bedbff"
 
-# TODO: wrap up into a config file
-radius = 3
-MATCHING_COLOR = 'yellow'
-
 class MatchingDevice(object):
     '''Interactive Tkinter window for creating a graph'''
 
-    def __init__(self):
+    def __init__(self, filepath="../graphs/counter.txt", max_edges=27):
         '''
-        filename: the name of a file to load
+        filepath: the name of a file to load
         indicator: tkinter canvas object corresponding to current nearest edge
         total_edges: the number of edges that the user has added to their
             pair of dijoint matchings
@@ -31,15 +31,13 @@ class MatchingDevice(object):
         root, canvas: tkinter objects
         '''
         
-        self.filename = ""
-
-        self.graph = nx.Graph()
+        self.filepath = filepath
+        self.max_edges = max_edges
+        self.total_edges = 0
 
         # keeps track of the line indicating the nearest edge
         # stores canvas object
         self.indicator = -1
-        self.total_edges = 0
-        self.max_edges = 0
 
         # Tkinter boilerplate
         self.root = Tk()
@@ -53,24 +51,22 @@ class MatchingDevice(object):
 
         # set up canvas
         self.canvas = Canvas(window, height=screenheight, width=screenwidth)
-
-        edge_list = list(self.graph.edges(data=False))
-        self.state = mst.ColorEdge(self.graph, self.canvas, edge_list, primary,
-                light_primary)
-
         self.canvas.pack()
         self.canvas.focus_set()
         self.canvas.bind("<Button-1>", self.click)
         self.canvas.bind("<Motion>", self.motion)
         self.canvas.bind("<Key>", self.key)
 
+        self.load_graph()
+        edge_list = list(self.graph.edges(data=False))
+        self.state = mst.ColorEdge(self.graph, self.canvas, edge_list, primary,
+                light_primary)
+
     def begin(self):
         self.root.mainloop()
 
-    def load_graph(self, filename, max_edges):
-        self.max_edges = max_edges
-        graph = gutils.load_graph(filename)
-        self.graph = graph
+    def load_graph(self):
+        self.graph = gutils.load_graph(self.filepath)
         
         edge_list = list(self.graph.edges(data=False))
         self.state = mst.ColorEdge(self.graph, self.canvas, edge_list, primary,
@@ -147,7 +143,7 @@ class MatchingDevice(object):
         elif char == 'd':
             # NOTE: only press 'd' once
             self.total_edges += len(self.state.matching_edges)
-            print("Edges used      : %d" % (self.total_edges))
+            print("      Edges used: %d" % (self.total_edges))
             print("Maximum possible: %d" % (self.max_edges))
             if (self.max_edges - self.total_edges >= 2):
                 print("press 'r' to try again or 'l' to try the next graph")
