@@ -66,8 +66,15 @@ class MatchingDevice(object):
         max_bbx_coord = max(bbx_width, bbx_height)
 
         # get the largest square that will fit in the screen
-        screenwidth = self.root.winfo_screenwidth()
-        screenheight = self.root.winfo_screenheight()
+        screenwidth = self.canvas.winfo_width()
+        screenheight = self.canvas.winfo_height()
+
+        # if you check before the mainloop the canvas size is 1x1
+        if screenwidth == 1:
+            screenwidth = self.root.winfo_screenwidth()
+        if screenheight == 1:
+            screenheight = self.root.winfo_screenheight()
+        print("(%d, %d)" % (screenwidth, screenheight))
         is_wide_screen = screenwidth > screenheight
         min_screen_dim = 0
         if is_wide_screen:
