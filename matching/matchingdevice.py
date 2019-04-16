@@ -86,7 +86,7 @@ class MatchingDevice(object):
         new_base_y = 0
         new_base_x = (screenwidth - (bbx_width * scale_factor)) / 2
         new_base_y = (screenheight - (bbx_height * scale_factor)) / 2
-        new_base_y -= 100
+        #new_base_y -= 25
         delta_x = new_base_x - (bbx[0][0] * scale_factor)
         delta_y = new_base_y - (bbx[0][1] * scale_factor)
 
