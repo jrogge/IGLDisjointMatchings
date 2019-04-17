@@ -57,9 +57,11 @@ class MatchingDevice(object):
         self.root.mainloop()
 
     def center(self):
-        ''' Center a graph on the screen changing coordinate data.'''
-        #TODO: this centers along the larger axis but not the smaller, make it
-        # fully center
+        ''' Center and scale a graph on the screen changing coordinate data
+        so that it is fairly large. What this is really doing is finding the
+        largest centered square on the screen and fitting the graph in that
+        square.
+        Should probably be broken up into two functions: scale and center'''
         bbx = gutils.get_bounding_box(self.graph)
         bbx_width = bbx[1][0] - bbx[0][0]
         bbx_height = bbx[1][1] - bbx[0][1]
@@ -74,7 +76,6 @@ class MatchingDevice(object):
             screenwidth = self.root.winfo_screenwidth()
         if screenheight == 1:
             screenheight = self.root.winfo_screenheight()
-        print("(%d, %d)" % (screenwidth, screenheight))
         is_wide_screen = screenwidth > screenheight
         min_screen_dim = 0
         if is_wide_screen:
